@@ -1,0 +1,564 @@
+<!DOCTYPE html>
+<html lang="pt">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>FlowCalc AI - Simulações de Dinâmica de Fluidos</title>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/mathjs/10.6.4/math.min.js"></script>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background-color: #f8f9fa;
+      margin: 0;
+      padding: 0;
+    }
+    header {
+      background: linear-gradient(to right, #007bff, #0055b3);
+      color: white;
+      padding: 20px;
+      text-align: center;
+    }
+    nav {
+      background: #0056b3;
+      padding: 10px;
+      text-align: center;
+      position: relative;
+    }
+    nav a {
+      color: white;
+      text-decoration: none;
+      margin: 0 15px;
+      font-weight: bold;
+      cursor: pointer;
+    }
+    .dropdown-container {
+      display: inline-block;
+      position: relative;
+    }
+    .dropdown {
+      display: none;
+      position: absolute;
+      background: white;
+      box-shadow: 0px 4px 6px rgba(0, 0, 0, 0.1);
+      border-radius: 5px;
+      padding: 10px;
+      top: 40px;
+      left: 50%;
+      transform: translateX(-50%);
+      z-index: 100;
+    }
+    .dropdown a {
+      display: block;
+      color: black;
+      padding: 5px 10px;
+      text-decoration: none;
+    }
+    .dropdown a:hover {
+      background: #007bff;
+      color: white;
+    }
+    .container {
+      padding: 20px;
+    }
+    .modal {
+      display: none;
+      position: fixed;
+      z-index: 1;
+      left: 0;
+      top: 0;
+      width: 100%;
+      height: 100%;
+      background-color: rgba(0, 0, 0, 0.5);
+    }
+    .modal-content {
+      background: white;
+      padding: 20px;
+      width: 70%;
+      max-height: 80vh;
+      margin: 10% auto;
+      border-radius: 8px;
+      overflow-y: auto;
+    }
+    .close {
+      float: right;
+      font-size: 20px;
+      cursor: pointer;
+    }
+    .values-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+      gap: 20px;
+      margin-top: 20px;
+    }
+    .values-item {
+      background: #0000FF;
+      padding: 20px;
+      border-radius: 10px;
+      box-shadow: 0 3px 6px rgba(0, 0, 0, 0.1);
+      transition: transform 0.3s ease, box-shadow 0.3s ease;
+      text-align: center;
+      border: 2px solid #000000;
+      color: #ffffff;
+    }
+    .values-item h3 {
+      color: #ffffff;
+      margin-bottom: 10px;
+      font-size: 18px;
+    }
+    .values-item p {
+      font-size: 16px;
+      color: #ffffff;
+    }
+    .values-item:hover {
+      transform: translateY(-5px);
+      box-shadow: 0 5px 10px rgba(0, 0, 0, 0.15);
+      background: #00008B;
+    }
+    .dropdown-container:hover .dropdown {
+      display: block !important;
+    }
+    .submenu-detalhes {
+      display: none;
+      padding: 10px;
+      background-color: #f9f9f9;
+      border-top: 1px solid #ddd;
+      font-size: 14px;
+    }
+    .submenu-detalhes ul {
+      margin: 0;
+      padding-left: 20px;
+    }
+    .submenu-detalhes li {
+      padding: 4px 0;
+    }
+    #questao4-modal .form-group {
+      margin-bottom: 15px;
+    }
+    #questao4-modal label {
+      display: block;
+      margin-bottom: 5px;
+      font-weight: bold;
+    }
+    #questao4-modal input {
+      width: 100%;
+      padding: 8px;
+      border: 1px solid #ddd;
+      border-radius: 4px;
+      margin-bottom: 10px;
+    }
+    #questao4-modal button {
+      background-color: #007bff;
+      color: white;
+      border: none;
+      padding: 10px 15px;
+      border-radius: 4px;
+      cursor: pointer;
+      font-weight: bold;
+    }
+    #questao4-modal button:hover {
+      background-color: #0056b3;
+    }
+    #resultados {
+      margin-top: 20px;
+      padding: 15px;
+      background-color: #f8f9fa;
+      border: 1px solid #ddd;
+      border-radius: 4px;
+    }
+    #canvas {
+      border: 1px solid #ddd;
+      margin-top: 20px;
+      background-color: #f8f9fa;
+    }
+  </style>
+</head>
+<body>
+
+<header>
+  <h1>FlowCalc AI</h1>
+  <p>A Revolução em Simulações de Dinâmica de Fluidos</p>
+</header>
+
+<nav>
+  <a href="#about">Sobre Nós</a>
+  <a href="#mission">Missão</a>
+  <a href="#values">Valores</a>
+  <a href="#values">Nossos Clientes</a>
+
+  <div class="dropdown-container" onmouseover="showDropdownServices()" onmouseleave="hideDropdownServices()">
+    <a id="services-btn">Nossos Serviços</a>
+    <div class="dropdown" id="services-dropdown" onmouseover="showDropdownServices()" onmouseleave="hideDropdownServices()">
+      <a href="#" onmouseover="mostrarDetalhes('detalhes1')" onmouseleave="esconderDetalhes()">1️⃣ Escoamento Potencial e Dinâmica dos Fluidos Inviscidos</a>
+      <div class="submenu-detalhes" id="detalhes1">
+        <ul>
+          <li>• Equação da continuidade para fluidos incompressíveis.</li>
+          <li>• Escoamento ao redor de cilindros e corpos submersos.</li>
+          <li>• Análise de linhas de corrente e funções de potencial.</li>
+        </ul>
+      </div>
+      <a href="#" onmouseover="mostrarDetalhes('detalhes2')" onmouseleave="esconderDetalhes()">2️⃣ Mecânica dos Fluidos Compressíveis</a>
+      <div class="submenu-detalhes" id="detalhes2">
+        <ul>
+          <li>• Equação da continuidade para fluidos compressíveis.</li>
+          <li>• Modelagem de sistemas com variação de densidade.</li>
+          <li>• Relação com processos termodinâmicos (expansão e compressão).</li>
+        </ul>
+      </div>
+      <a href="#" onmouseover="mostrarDetalhes('detalhes3')" onmouseleave="esconderDetalhes()">3️⃣ Equações de Navier-Stokes e Escoamentos Viscosos</a>
+      <div class="submenu-detalhes" id="detalhes3">
+        <ul>
+          <li>• Aplicação das equações de Navier-Stokes para prever escoamentos.</li>
+          <li>• Determinação da distribuição de pressão em fluidos viscosos.</li>
+          <li>• Modelagem de escoamentos laminares e turbulentos.</li>
+          <li>• Impacto das forças viscosas no movimento do fluido.</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+
+  <div class="dropdown-container" onmouseover="showDropdown()" onmouseleave="hideDropdown()">
+    <a id="calculator-btn">Simulador</a>
+    <div class="dropdown" id="calculator-dropdown" onmouseover="showDropdown()" onmouseleave="hideDropdown()">
+      <a href="#" onclick="openModal('questao1')">Questão 01</a>
+      <a href="#" onclick="openModal('questao2')">Questão 02</a>
+      <a href="#" onclick="openModal('questao3')">Questão 03</a>
+      <a href="#" onclick="openModal('questao4')">Questão 04</a>
+       <a href="#" onclick="openModal('questao5')">Questão 05</a>
+    </div>
+  </div>
+
+  <a href="#contact">Contato</a>
+</nav>
+
+<div class="container" id="about">
+  <h2>Sobre a Empresa</h2>
+  <p>
+    A <strong>FlowCalc AI</strong> é uma plataforma inovadora dedicada a simplificar cálculos de dinâmica de fluidos, 
+    permitindo que engenheiros e cientistas otimizem seus projetos de maneira eficiente e sustentável.
+    Oferecemos ferramentas avançadas para análise, cálculo e visualização de fluxos de fluidos em diversas indústrias.
+  </p>
+</div>
+
+<div class="container" id="mission">
+  <h2>Missão</h2>
+  <p>
+    Capacitar profissionais e indústrias com ferramentas tecnológicas para projetar soluções aerodinâmicas de alta eficiência,
+    contribuindo para avanços na engenharia, redução de custos e sustentabilidade.
+  </p>
+</div>
+
+<div class="container" id="values">
+  <h2>Valores</h2>
+  <div class="values-grid">
+    <div class="values-item">
+      <h3>🔬 Inovação</h3>
+      <p>Usamos tecnologia de ponta para resolver desafios complexos.</p>
+    </div>
+    <div class="values-item">
+      <h3>📏 Precisão</h3>
+      <p>Garantimos resultados confiáveis e precisos em todos os cálculos.</p>
+    </div>
+    <div class="values-item">
+      <h3>🌱 Sustentabilidade</h3>
+      <p>Promovemos soluções que respeitam o meio ambiente.</p>
+    </div>
+    <div class="values-item">
+      <h3>🤝 Colaboração</h3>
+      <p>Trabalhamos lado a lado com nossos clientes para alcançar os melhores resultados.</p>
+    </div>
+  </div>
+</div>
+
+<div class="container" id="contact">
+  <h2>Contato</h2>
+  <div class="contact-info">
+    <p><strong>📧 Email:</strong> contato@flowcalc.ai</p>
+    <p><strong>📱 Instagram:</strong> <a href="https://www.instagram.com/nrcantanhede" target="_blank">@nrcantanhede</a></p>
+    <p><strong>🐦 Twitter (X):</strong> <a href="https://twitter.com/seuusuario" target="_blank">@nilton</a></p>
+    <p><strong>☎️ Telefone:</strong> (98) 3244-2323</p>
+  </div>
+</div>
+
+<!-- Modais para cada questão -->
+<div id="questao1-modal" class="modal">
+  <div class="modal-content">
+    <span class="close" onclick="closeModal('questao1')">&times;</span>
+    <h2>Calculadora - Questão 01</h2>
+    <input type="text" id="equation" placeholder="Equação u(x)">
+    <input type="number" id="xValue" placeholder="Valor de x">
+    <input type="number" id="yValue" placeholder="Valor de y">
+    <button onclick="calculateQuestao1()">Calcular</button>
+    <div id="resultQuestao1"></div>
+  </div>
+</div>
+
+<div id="questao2-modal" class="modal">
+  <div class="modal-content">
+    <span class="close" onclick="closeModal('questao2')">&times;</span>
+    <h2>Calculadora - Questão 02</h2>
+    <input type="number" id="L" placeholder="Valor de L">
+    <input type="number" id="rho" placeholder="Valor de ρ">
+    <input type="number" id="V" placeholder="Valor de V">
+    <button onclick="calculateQuestao2()">Calcular</button>
+    <div id="resultQuestao2"></div>
+  </div>
+</div>
+
+<div id="questao3-modal" class="modal">
+  <div class="modal-content">
+    <span class="close" onclick="closeModal('questao3')">&times;</span>
+    <h2>Calculadora - Questão 03</h2>
+    <input type="number" id="x3" placeholder="Valor de x">
+    <input type="number" id="y3" placeholder="Valor de y">
+    <input type="number" id="rho3" placeholder="Densidade ρ">
+    <input type="number" id="g3" placeholder="Aceleração da gravidade g">
+    <button onclick="calculateQuestao3()">Calcular</button>
+    <div id="resultQuestao3"></div>
+  </div>
+</div>
+
+<!-- Modal para Questão 04 - Versão melhorada -->
+<div id="questao4-modal" class="modal">
+  <div class="modal-content">
+    <span class="close" onclick="closeModal('questao4')">&times;</span>
+    <h2>Calculadora - Questão 04</h2>
+    
+    <div class="form-group">
+      <label for="u">Função u(x, y):</label>
+      <input type="text" id="u" value="4*x^2 + 4*y^2" placeholder="Ex: 4*x^2 + 4*y^2">
+
+      <label for="v">Função v(x, y):</label>
+      <input type="text" id="v" value="-8*x*y" placeholder="Ex: -8*x*y">
+
+      <label for="largura">Largura (m):</label>
+      <input type="number" id="largura" value="0.3" step="0.01" placeholder="Ex: 0.3">
+      
+      <label for="altura">Altura (m):</label>
+      <input type="number" id="altura" value="0.4" step="0.01" placeholder="Ex: 0.4">
+      
+      <button onclick="calcularQuestao4()">Calcular e Desenhar</button>
+    </div>
+
+    <h3>Visualização do Retângulo</h3>
+    <canvas id="canvas" width="400" height="400" style="border: 1px solid #ddd; margin-top: 10px;"></canvas>
+
+    <h3>Resultados</h3>
+    <div id="resultados" style="background-color: #f8f9fa; padding: 15px; border-radius: 5px; margin-top: 20px;">
+      <table style="width: 100%; border-collapse: collapse;">
+        <tr>
+          <th style="padding: 10px; border-bottom: 1px solid #ddd; text-align: left;">Descrição</th>
+          <th style="padding: 10px; border-bottom: 1px solid #ddd; text-align: left;">Valor</th>
+        </tr>
+        <tr>
+          <td style="padding: 10px; border-bottom: 1px solid #ddd;">Rotacional (∂v/∂x - ∂u/∂y)</td>
+          <td style="padding: 10px; border-bottom: 1px solid #ddd;" id="rotacional-result">-</td>
+        </tr>
+        <tr>
+          <td style="padding: 10px; border-bottom: 1px solid #ddd;">É irrotacional?</td>
+          <td style="padding: 10px; border-bottom: 1px solid #ddd;" id="irrotacional-result">-</td>
+        </tr>
+        <tr>
+          <td style="padding: 10px;">Circulação no retângulo</td>
+          <td style="padding: 10px;" id="circulacao-result">-</td>
+        </tr>
+      </table>
+    </div>
+  </div>
+</div>
+
+<script>
+  function openModal(question) {
+    document.getElementById(question + "-modal").style.display = "block";
+    
+    // Se for a questão 4, inicializa o canvas
+    if (question === 'questao4') {
+      setTimeout(function() {
+        const canvas = document.getElementById("canvas");
+        const ctx = canvas.getContext("2d");
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        ctx.fillStyle = "#f0faff";
+        ctx.fillRect(0, 0, 400, 400);
+      }, 100);
+    }
+  }
+
+  function closeModal(question) {
+    document.getElementById(question + "-modal").style.display = "none";
+  }
+
+  function showDropdown() {
+    document.getElementById("calculator-dropdown").style.display = "block";
+  }
+
+  function hideDropdown() {
+    setTimeout(function() {
+      document.getElementById("calculator-dropdown").style.display = "none";
+    }, 1000);
+  }
+
+  function calculateQuestao1() {
+    let equation = document.getElementById("equation").value;
+    let xValue = parseFloat(document.getElementById("xValue").value);
+    let yValue = parseFloat(document.getElementById("yValue").value);
+
+    let du_dx = math.derivative(equation, 'x').evaluate({ x: xValue });
+    let velocityY = du_dx * yValue;
+
+    document.getElementById("resultQuestao1").innerHTML = `
+      <p>∂u/∂x em x=${xValue}: <strong>${du_dx.toFixed(5)}</strong> m/s²</p>
+      <p>Velocidade Y: <strong>${velocityY.toFixed(5)}</strong> m/s</p>
+    `;
+  }
+
+  function calculateQuestao2() {
+    let L = parseFloat(document.getElementById("L").value);
+    let rho = parseFloat(document.getElementById("rho").value);
+    let V = parseFloat(document.getElementById("V").value);
+
+    let resultado = (rho * V * V) / (2 * L);
+    document.getElementById("resultQuestao2").innerHTML = `<p><strong>Resultado:</strong> ${resultado.toFixed(5)} N/m²</p>`;
+  }
+
+  function calculateQuestao3() {
+    let x = parseFloat(document.getElementById("x3").value);
+    let y = parseFloat(document.getElementById("y3").value);
+    let rho = parseFloat(document.getElementById("rho3").value);
+    let g = parseFloat(document.getElementById("g3").value);
+
+    let pressao = -rho * (18 * x * x + 18 * y * y + g * y);
+    document.getElementById("resultQuestao3").innerHTML = `<p><strong>Pressão no fluido:</strong> ${pressao.toFixed(2)} Pa</p>`;
+  }
+
+  // Função corrigida para Questão 4
+  function calcularQuestao4() {
+    try {
+      // Obter os valores de entrada
+      const uInput = document.getElementById("u").value;
+      const vInput = document.getElementById("v").value;
+      const largura = parseFloat(document.getElementById("largura").value);
+      const altura = parseFloat(document.getElementById("altura").value);
+
+      // Verificar se todos os valores necessários estão presentes
+      if (!uInput || !vInput || isNaN(largura) || isNaN(altura)) {
+        document.getElementById("resultados").innerHTML = `
+          <h3>Erro:</h3>
+          <p>Por favor, preencha todos os campos corretamente.</p>
+        `;
+        return;
+      }
+
+      // Calcular derivadas parciais de forma segura
+      let du_dy, dv_dx;
+      
+      try {
+        // Derivada parcial de u em relação a y
+        du_dy = math.derivative(uInput, 'y').toString();
+        
+        // Derivada parcial de v em relação a x
+        dv_dx = math.derivative(vInput, 'x').toString();
+      } catch (error) {
+        document.getElementById("resultados").innerHTML = `
+          <h3>Erro ao calcular derivadas:</h3>
+          <p>${error.message}</p>
+        `;
+        return;
+      }
+
+      // Rotacional (curl) é dv/dx - du/dy
+      const rotacionalExpr = `(${dv_dx}) - (${du_dy})`;
+      const rotacional = math.simplify(rotacionalExpr).toString();
+
+      // Verificar se o campo é irrotacional
+      const irrotacional = rotacional === '0' ? 'Sim' : 'Não';
+
+      // Calcular circulação (exemplo simplificado)
+      const circulacao = -8 * Math.pow(altura, 2) * largura;
+
+      // Exibir resultados na tabela
+      document.getElementById("rotacional-result").innerText = rotacional;
+      document.getElementById("irrotacional-result").innerText = irrotacional;
+      document.getElementById("circulacao-result").innerText = `${circulacao.toFixed(3)} m²/s`;
+
+      // Desenhar o retângulo
+      desenharQuestao4(largura, altura);
+    } catch (error) {
+      document.getElementById("resultados").innerHTML = `
+        <h3>Erro:</h3>
+        <p>${error.message}</p>
+      `;
+    }
+  }
+
+  function desenharQuestao4(largura, altura) {
+    const canvas = document.getElementById("canvas");
+    const ctx = canvas.getContext("2d");
+
+    const fatorConversao = 200;  // Fator para converter metros em pixels
+    const larguraPx = largura * fatorConversao;
+    const alturaPx = altura * fatorConversao;
+
+    // Limpar o canvas
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+    // Desenhar fundo
+    ctx.fillStyle = "#f0faff";
+    ctx.fillRect(0, 0, 300, 300);
+
+    // Desenhar linhas de grade
+    ctx.strokeStyle = "#a0c4de";
+    ctx.lineWidth = 1;
+    for (let i = 20; i <= 380; i += 20) {
+      ctx.beginPath();
+      ctx.moveTo(0, i);
+      ctx.lineTo(400, i);
+      ctx.stroke();
+      
+      ctx.beginPath();
+      ctx.moveTo(i, 0);
+      ctx.lineTo(i, 400);
+      ctx.stroke();
+    }
+
+    // Desenhar o retângulo
+    ctx.strokeStyle = "#000000";
+    ctx.lineWidth = 2;
+
+    ctx.beginPath();
+    ctx.moveTo(100, 300);
+    ctx.lineTo(100 + larguraPx, 300);
+    ctx.lineTo(100 + larguraPx, 300 - alturaPx);
+    ctx.lineTo(100, 300 - alturaPx);
+    ctx.closePath();
+    ctx.stroke();
+
+    // Adicionar rótulos
+    ctx.fillStyle = "#000000";
+    ctx.font = "12px Arial";
+    ctx.fillText("O", 80, 315);
+    ctx.fillText("A", 100 + larguraPx + 5, 315);
+    ctx.fillText("B", 100 + larguraPx + 5, 300 - alturaPx - 5);
+    ctx.fillText("C", 80, 300 - alturaPx - 5);
+  }
+
+  function showDropdownServices() {
+    document.getElementById("services-dropdown").style.display = "block";
+  }
+
+  function hideDropdownServices() {
+    setTimeout(() => {
+      document.getElementById("services-dropdown").style.display = "none";
+    }, 300);
+  }
+
+  function mostrarDetalhes(id) {
+    document.querySelectorAll(".submenu-detalhes").forEach(el => el.style.display = "none");
+    document.getElementById(id).style.display = "block";
+  }
+
+  function esconderDetalhes() {
+    document.querySelectorAll(".submenu-detalhes").forEach(el => el.style.display = "none");
+  }
+</script>
+
+</body>
+</html>
